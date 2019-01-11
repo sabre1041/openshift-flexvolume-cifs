@@ -1,0 +1,151 @@
+#!/bin/bash
+
+
+DEFAULT_CONTAINER_SECURITY_CONTEXT="context=system_u:object_r:svirt_sandbox_file_t:s0"
+
+init() {
+    echo '{"status": "Success", "capabilities": {"attach": false, "selinuxRelabel": false}}'
+    exit 0
+}
+
+parse_json() {
+    KEY=$1
+    JSON=$2
+    echo $JSON | python -c "import sys, json; print(json.load(sys.stdin).get('$KEY',''))"
+}
+
+errorExit() {
+    MESSAGE=$1
+    if [[ $# -ne 1 ]] ; then
+        echo '{ "status": "Failure", "message": "Unknown error in the openshift.io/cifs flexvolume plugin." }'
+    else
+        echo "{ \"status\": \"Failure\", \"message\": \"$(echo $MESSAGE | tr -d '\n')\" }"
+    fi
+    exit 1
+}
+
+ismounted() {
+    MOUNT=`findmnt -n ${MOUNT_PATH} 2>/dev/null | cut -d' ' -f1`
+    if echo $MOUNT | grep -q ${MOUNT_PATH}; then
+        return 0
+    fi
+    return 1
+}
+
+
+mount() {
+
+    MOUNT_PATH="$1"
+
+    shift
+
+    JSON=$(printf '%s ' "${@}")
+   
+    NETWORK_PATH=$(parse_json "networkPath" $JSON)
+
+       if [ ! -n "$NETWORK_PATH" ]; then
+       errorExit "Network path Is not Found"
+    fi
+
+    MOUNT_OPTIONS=$(parse_json "mountOptions" $JSON)
+    READ_WRITE_MODE=$(parse_json "kubernetes.io/readwrite" $JSON)
+    USERNAME=$(parse_json "kubernetes.io/secret/username" $JSON | base64 -d)
+
+       if [ ! -n "$USERNAME" ]; then
+       errorExit "Username not found in secret"
+    fi
+
+    PASSWORD=$(parse_json "kubernetes.io/secret/password" $JSON | base64 -d)
+
+       if [ ! -n "$PASSWORD" ]; then
+       errorExit "Password not found in secret"
+    fi
+
+    DOMAIN=$(parse_json "kubernetes.io/secret/domain" $JSON| base64 -d)
+
+    ALL_OPTIONS="username=${USERNAME},password=${PASSWORD},${READ_WRITE_MODE}"
+
+    if [ -n "$DOMAIN" ]; then
+        ALL_OPTIONS="${ALL_OPTIONS},domain=${DOMAIN}"
+    fi
+
+    if [ -n "$MOUNT_OPTIONS" ]; then
+        ALL_OPTIONS="${ALL_OPTIONS},${MOUNT_OPTIONS}"
+    fi
+
+    # Add default security context if none provided
+    if [[ ! ${ALL_OPTIONS} == *"context="* ]]; then
+        ALL_OPTIONS="${ALL_OPTIONS},${DEFAULT_CONTAINER_SECURITY_CONTEXT}"
+    fi
+
+    if ismounted ; then
+        echo '{"status": "Success"}'
+        exit 0
+    fi
+
+    OUTPUT=$(mkdir -p ${MOUNT_PATH} 2>&1)
+
+    if [ $? -ne 0 ]; then
+        errorExit "Failed to Create Mount Directory at ${MOUNT_PATH}. Error: ${OUTPUT}"
+        exit 1
+    fi
+    
+    OUTPUT=$(/bin/mount -t cifs "${NETWORK_PATH}" "${MOUNT_PATH}" -o "${ALL_OPTIONS}" 2>&1)
+
+    if [ $? -ne 0 ]; then
+        errorExit "Failed to mount ${NETWORK_PATH} at ${MOUNT_PATH}. ${OUTPUT}"
+        exit 1
+    fi
+
+    echo '{"status": "Success"}'
+
+    exit 0
+
+}
+
+unmount() {
+    MOUNT_PATH="$1"
+    if ! ismounted ; then
+        echo '{"status": "Success"}'
+        exit 0
+    fi
+
+    OUTPUT=$(/bin/umount "${MOUNT_PATH}" 2>&1)
+    if [ $? -ne 0 ]; then
+        errorExit "Failed to unmount volume at ${MOUNT_PATH}. Error: ${OUTPUT}"
+    fi
+
+    OUTPUT=$(rmdir "${MOUNT_PATH}" 2>&1)
+
+    if [ $? -ne 0 ]; then
+        errorExit "Failed to remove directory at ${MOUNT_PATH}. Error: ${OUTPUT}"
+    fi 
+
+    echo '{"status": "Success"}'
+    exit 0
+}
+
+not_supported() {
+    echo '{ "status": "Not supported" }'
+    exit 1
+}
+
+command=${1:-}
+if [[ -n $command ]]; then
+    shift
+fi
+
+case "$command" in
+    init)
+        init "$@"
+        ;;
+    mount)
+        mount "$@"
+        ;;
+    unmount)
+        unmount "$@"
+        ;;
+    *)
+        not_supported "$@"
+        ;;
+esac

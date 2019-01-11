@@ -1,0 +1,58 @@
+---
+
+- hosts: nodes
+  vars: 
+    vendor_name: openshift.io
+    driver_name: cifs
+    driver_location: "{{ playbook_dir }}/../flexvolume-driver/cifs"
+    volume_plugin_path: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec"
+    install_packages:
+      - cifs-utils
+  tasks:
+    - name: Install required packages
+      package:
+        name: "{{ install_packages }}"
+        state: present
+    - name: Validate driver exists
+      stat:
+        path: "{{ driver_location }}"
+      register: driver_exists
+      delegate_to: localhost
+    - name: Fail if driver not found
+      fail:
+        msg: Driver file not found!
+      when: not driver_exists.stat.exists
+    - name: Create cifs driver directory
+      file:
+        state: directory
+        path: "{{ volume_plugin_path }}/{{ vendor_name }}~{{ driver_name }}"
+    - name: Copy cifs driver
+      copy:
+        src: "{{ driver_location }}"
+        dest: "{{ volume_plugin_path }}/{{ vendor_name }}~{{ driver_name }}/{{ driver_name }}"
+        mode: 0755
+      register: driver_copy
+  
+- hosts: masters
+  serial: 1
+  vars: 
+    openshift_master_binary: "/usr/local/bin/master-restart"
+    openshift_master_controllers_service: atomic-openshift-master-controllers
+  tasks:
+    - name: debug
+      debug:
+        msg: "{{ hostvars[inventory_hostname]['driver_copy']['changed'] }}"
+    - name: Check if master binary exists
+      stat:
+        path: "{{ openshift_master_binary }}"
+      register: master_binary
+      when: "'masters' in group_names"
+    - name: Restart OpenShift Master Controller (3.10+)
+      command: >
+        "{{ openshift_master_binary }}" controllers
+      when: "'masters' in group_names and master_binary.stat.exists and (hostvars[inventory_hostname]['driver_copy']['changed']|default(false))|bool"
+    - name: Restart OpenShift Master Controller (<3.10)
+      service:
+        name: "{{ openshift_master_controllers_service }}"
+        state: restarted
+      when: "'masters' in group_names and not master_binary.stat.exists and (hostvars[inventory_hostname]['driver_copy']['changed']|default(false))|bool"

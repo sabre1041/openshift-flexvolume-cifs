@@ -1,0 +1,11 @@
+[masters]
+# OpenShift masters
+
+[nodes]
+# Insert OpenShift where the driver should be supported to run on
+
+[nodes:children]
+masters
+
+[nodes:vars]
+ansible_become=true
