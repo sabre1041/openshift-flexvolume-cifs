@@ -4,7 +4,7 @@ FlexVolume driver for access CIFS based shares
 
 ## Overview
 
-[FlexVolume's](https://docs.openshift.com/container-platform/3.11/install_config/persistent_storage/persistent_storage_flex_volume.html provide a method for users to create their own drivers for adding options for utilizng persistent storage in an OpenShift and Kubernetes environment. This driver allows for the creation of a [PersistentVolume](https://docs.openshift.com/container-platform/3.11/architecture/additional_concepts/storage.html) or direct mount to access storage that is exposed by a CIFS share.
+[FlexVolume's](https://docs.openshift.com/container-platform/3.11/install_config/persistent_storage/persistent_storage_flex_volume.html) provide a method for users to create their own drivers for adding options for utilizng persistent storage in an OpenShift and Kubernetes environment. This driver allows for the creation of a [PersistentVolume](https://docs.openshift.com/container-platform/3.11/architecture/additional_concepts/storage.html) or direct mount to access storage that is exposed by a CIFS share.
 
 ## Setup
 
