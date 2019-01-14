@@ -89,7 +89,9 @@ oc process -p USERNAME=<username> -p PASSWORD=<password> -f examples/cifs-secret
 
 A new secret called _cifs-credentials_ will be created
 
-_NOTE_: In addition to username and password, the domain associated with the CIFS share can also be specified. If desired, add the `domain` key to the secret. 
+_NOTE_: In addition to username and password, the domain associated with the CIFS share can also be specified. If desired, add the `domain` key to the secret.
+
+A _credentials_ file will be located one directory above the location where the volume is mounted in the format `.<MOUNT_NAME>.credentials
 
 ### Security Context Contraints
 

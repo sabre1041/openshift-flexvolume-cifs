@@ -24,6 +24,17 @@ errorExit() {
     exit 1
 }
 
+get_credentials_filename() {
+    MOUNT=$1
+
+    DIRECTORY=${MOUNT%/*}
+    VOLUME_NAME=${MOUNT##*/}
+
+    mkdir -p $DIRECTORY
+
+    echo $DIRECTORY/.${VOLUME_NAME}.credentials
+}
+
 ismounted() {
     MOUNT=`findmnt -n ${MOUNT_PATH} 2>/dev/null | cut -d' ' -f1`
     if echo $MOUNT | grep -q ${MOUNT_PATH}; then
@@ -40,6 +51,8 @@ mount() {
     shift
 
     JSON=$(printf '%s ' "${@}")
+
+    CREDENTIALS_FILE=$(get_credentials_filename ${MOUNT_PATH})
    
     NETWORK_PATH=$(parse_json "networkPath" $JSON)
 
@@ -56,15 +69,21 @@ mount() {
     ALL_OPTIONS="${READ_WRITE_MODE}"
 
     if [ ! -z "$USERNAME" ]; then
-        ALL_OPTIONS="${ALL_OPTIONS},username=${USERNAME}"
+        echo "username=${USERNAME}" >> ${CREDENTIALS_FILE}
     fi
 
     if [ ! -z "$PASSWORD" ]; then
-        ALL_OPTIONS="${ALL_OPTIONS},password=${PASSWORD}"
+        echo "password=${PASSWORD}" >> ${CREDENTIALS_FILE}
     fi
 
     if [ ! -z "$DOMAIN" ]; then
-        ALL_OPTIONS="${ALL_OPTIONS},domain=${DOMAIN}"
+        echo "domain=${DOMAIN}" >> ${CREDENTIALS_FILE}
+    fi
+
+    # Configure credentials file permissions and mount directive
+    if [ -f ${CREDENTIALS_FILE} ]; then
+        chmod 600 ${CREDENTIALS_FILE}
+        ALL_OPTIONS="${ALL_OPTIONS},credentials=${CREDENTIALS_FILE}"
     fi
 
     if [ ! -z "$MOUNT_OPTIONS" ]; then
@@ -103,6 +122,8 @@ mount() {
 
 unmount() {
     MOUNT_PATH="$1"
+    CREDENTIALS_FILE=$(get_credentials_filename ${MOUNT_PATH})
+
     if ! ismounted ; then
         echo '{"status": "Success"}'
         exit 0
@@ -117,7 +138,11 @@ unmount() {
 
     if [ $? -ne 0 ]; then
         errorExit "Failed to remove directory at ${MOUNT_PATH}. Error: ${OUTPUT}"
-    fi 
+    fi
+
+    if [ -f ${CREDENTIALS_FILE} ]; then
+        rm -f ${CREDENTIALS_FILE}
+    fi
 
     echo '{"status": "Success"}'
     exit 0
