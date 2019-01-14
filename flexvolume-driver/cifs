@@ -50,26 +50,24 @@ mount() {
     MOUNT_OPTIONS=$(parse_json "mountOptions" $JSON)
     READ_WRITE_MODE=$(parse_json "kubernetes.io/readwrite" $JSON)
     USERNAME=$(parse_json "kubernetes.io/secret/username" $JSON | base64 -d)
-
-       if [ ! -n "$USERNAME" ]; then
-       errorExit "Username not found in secret"
-    fi
-
     PASSWORD=$(parse_json "kubernetes.io/secret/password" $JSON | base64 -d)
-
-       if [ ! -n "$PASSWORD" ]; then
-       errorExit "Password not found in secret"
-    fi
-
     DOMAIN=$(parse_json "kubernetes.io/secret/domain" $JSON| base64 -d)
 
-    ALL_OPTIONS="username=${USERNAME},password=${PASSWORD},${READ_WRITE_MODE}"
+    ALL_OPTIONS="${READ_WRITE_MODE}"
 
-    if [ -n "$DOMAIN" ]; then
+    if [ ! -z "$USERNAME" ]; then
+        ALL_OPTIONS="${ALL_OPTIONS},username=${USERNAME}"
+    fi
+
+    if [ ! -z "$PASSWORD" ]; then
+        ALL_OPTIONS="${ALL_OPTIONS},password=${PASSWORD}"
+    fi
+
+    if [ ! -z "$DOMAIN" ]; then
         ALL_OPTIONS="${ALL_OPTIONS},domain=${DOMAIN}"
     fi
 
-    if [ -n "$MOUNT_OPTIONS" ]; then
+    if [ ! -z "$MOUNT_OPTIONS" ]; then
         ALL_OPTIONS="${ALL_OPTIONS},${MOUNT_OPTIONS}"
     fi
 
