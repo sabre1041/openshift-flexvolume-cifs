@@ -120,9 +120,9 @@ flexVolume:
   options:
     mountOptions: 'file_mode=0770,dir_mode=0770'
     networkPath: //cifsserver/cifsShare
-    secretRef:
-        name: cifs-credentials
-    name: cifs
+  secretRef:
+    name: cifs-credentials
+  name: cifs
 ```
 
 Be sure to configure the `networkPath` option with the location of the CIFS sahre. In addition, it is recommended (almost required) that the above `mountOptions` be specified in order to comply with OpenShift's security model.

@@ -6,6 +6,7 @@
     driver_name: cifs
     driver_location: "{{ playbook_dir }}/../flexvolume-driver/cifs"
     volume_plugin_path: "/usr/libexec/kubernetes/kubelet-plugins/volume/exec"
+    openshift_node_service: atomic-openshift-node
     install_packages:
       - cifs-utils
   tasks:
@@ -32,6 +33,10 @@
         dest: "{{ volume_plugin_path }}/{{ vendor_name }}~{{ driver_name }}/{{ driver_name }}"
         mode: 0755
       register: driver_copy
+    - name: Restart OpenShift Node Service
+      service:
+        name: "{{ openshift_node_service }}"
+        state: restarted
   
 - hosts: masters
   serial: 1
@@ -39,9 +44,6 @@
     openshift_master_binary: "/usr/local/bin/master-restart"
     openshift_master_controllers_service: atomic-openshift-master-controllers
   tasks:
-    - name: debug
-      debug:
-        msg: "{{ hostvars[inventory_hostname]['driver_copy']['changed'] }}"
     - name: Check if master binary exists
       stat:
         path: "{{ openshift_master_binary }}"
