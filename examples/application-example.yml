@@ -1,0 +1,74 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+  name: cifs-app
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      name: ${NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          name: ${NAME}
+        name: ${NAME}
+      spec:
+        containers:
+        - image: ${IMAGE}
+          name: cifs-app
+          command: ["/bin/bash", "-c", "while true; do sleep 10; done"]
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 200m
+            requests:
+              memory: 128Mi
+              cpu: 200m
+        volumeMounts:
+          - name: cifs
+            mountPath: /mnt/cifs
+        volumes:
+          - name: cifs
+            flexVolume:
+              driver: openshift.io/cifs
+              fsType: cifs
+              secretRef:
+                name: ${SECRET}
+              options:
+                networkPath: "${NETWORK_PATH}"
+                mountOptions: "${MOUNT_OPTIONS}"
+    triggers:
+    - type: ConfigChange
+parameters:
+- description: Application Name.
+  displayName: Name
+  name: NAME
+  required: true
+  value: cifs-app
+- description: Image used to run the container.
+  displayName: Image
+  name: IMAGE
+  required: true
+  value: registry.access.redhat.com/rhel7/rhel:7.6
+- description: Name of the secret containing the CIFS credentials.
+  displayName: CIFS Secret
+  name: SECRET
+  required: true
+  value: "file_mode=0770,dir_mode=0770"
+- description: Network path for the CIFS mount.
+  displayName: Network Path
+  name: NETWORK_PATH
+  required: true
+  value: "//<server>/<share>"
+- description: CIFS mount options.
+  displayName: Mount Options
+  name: MOUNT_OPTIONS
+  required: true
+  value: "file_mode=0770,dir_mode=0770"

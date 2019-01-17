@@ -22,15 +22,9 @@ yum install cifs-utils
 
 2. Install the driver
 
-The [cifs](flexvolume-driver/cifs) driver needs to be placed on all Master instances as well as any node that applications leveraging the FlexVolume driver will be mounted. The drivers that are used to support FlexVolume's are placed within the `/usr/libexec/kubernetes/kubelet-plugins/volume/exec/` directory. Within this directory, drivers are stored by vendor name and driver name in the format `<vendor>~<driver>`. Tehe vendor for this driver is `openshift.io` and the driver name is called `cifs`. Create a directory called `/usr/libexec/kubernetes/kubelet-plugins/volume/exec/openshift.io~cifs` and place the cifs driver executable within it
+The [cifs](flexvolume-driver/cifs) driver needs to be placed on all nodes that applications leveraging the FlexVolume driver will be mounted. The drivers that are used to support FlexVolume's are placed within the `/usr/libexec/kubernetes/kubelet-plugins/volume/exec/` directory. Within this directory, drivers are stored by vendor name and driver name in the format `<vendor>~<driver>`. Tehe vendor for this driver is `openshift.io` and the driver name is called `cifs`. Create a directory called `/usr/libexec/kubernetes/kubelet-plugins/volume/exec/openshift.io~cifs` and place the cifs driver executable within it
 
 3. Restart the OpenShift Services
-
-On the OpenShift Master's, restart the controllers
-
-```
-master-restart controllers
-```
 
 On all nodes the driver was configured on, restart the Atomic Node service
 
@@ -44,7 +38,15 @@ The installation process for the FlexVolume driver can be automated through the 
 
 ### Configure the inventory
 
-An example inventory file called [inventory](ansible/inventory) is available in the [ansible](ansible) directory. The inventory groups align with the group names utilized in the OpenShift installation meaning that inventories created for existing environments can be utilized. Otherwise, fill out the _masters_ and _nodes_ with the instances that are desired to be configured with the CIFS FlexVolume driver.
+An example inventory file called [inventory](ansible/inventory) is available in the [ansible](ansible) directory. The inventory groups align with the group names utilized in the OpenShift installation meaning that inventories created for existing environments can be utilized. Otherwise, fill out the _nodes_ group with the instances that are desired to be configured with the CIFS FlexVolume driver.
+
+### Run the playbook
+
+Run the Ansible playbook executing the following command within the [ansible](ansible) directory.
+
+```
+ansible-playbook -i inventory setup-openshift.yml
+```
 
 ## Implementation
 

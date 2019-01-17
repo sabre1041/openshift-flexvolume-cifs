@@ -1,6 +1,7 @@
 ---
 
 - hosts: nodes
+  serial: 1
   vars: 
     vendor_name: openshift.io
     driver_name: cifs
@@ -37,24 +38,3 @@
       service:
         name: "{{ openshift_node_service }}"
         state: restarted
-  
-- hosts: masters
-  serial: 1
-  vars: 
-    openshift_master_binary: "/usr/local/bin/master-restart"
-    openshift_master_controllers_service: atomic-openshift-master-controllers
-  tasks:
-    - name: Check if master binary exists
-      stat:
-        path: "{{ openshift_master_binary }}"
-      register: master_binary
-      when: "'masters' in group_names"
-    - name: Restart OpenShift Master Controller (3.10+)
-      command: >
-        "{{ openshift_master_binary }}" controllers
-      when: "'masters' in group_names and master_binary.stat.exists and (hostvars[inventory_hostname]['driver_copy']['changed']|default(false))|bool"
-    - name: Restart OpenShift Master Controller (<3.10)
-      service:
-        name: "{{ openshift_master_controllers_service }}"
-        state: restarted
-      when: "'masters' in group_names and not master_binary.stat.exists and (hostvars[inventory_hostname]['driver_copy']['changed']|default(false))|bool"
