@@ -67,8 +67,8 @@ metadata:
   name: cifs-credentials
 type: openshift.io/cifs
 stringData:
-  password: <username>
-  username: <password>
+  username: <username>
+  password: <password>
 ```
 
 Replace `<username>` and `<password>` with the actual values
