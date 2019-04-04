@@ -61,7 +61,7 @@ parameters:
   displayName: CIFS Secret
   name: SECRET
   required: true
-  value: "file_mode=0770,dir_mode=0770"
+  value: "cifs-credentials"
 - description: Network path for the CIFS mount.
   displayName: Network Path
   name: NETWORK_PATH
