@@ -31,9 +31,9 @@ objects:
             requests:
               memory: 128Mi
               cpu: 200m
-        volumeMounts:
-          - name: cifs
-            mountPath: /mnt/cifs
+          volumeMounts:
+            - name: cifs
+              mountPath: /mnt/cifs
         volumes:
           - name: cifs
             flexVolume:
