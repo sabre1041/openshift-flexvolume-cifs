@@ -54,17 +54,17 @@ mount() {
 
     CREDENTIALS_FILE=$(get_credentials_filename ${MOUNT_PATH})
    
-    NETWORK_PATH=$(parse_json "networkPath" $JSON)
+    NETWORK_PATH=$(parse_json "networkPath" "$JSON")
 
        if [ ! -n "$NETWORK_PATH" ]; then
        errorExit "Network path Is not Found"
     fi
 
-    MOUNT_OPTIONS=$(parse_json "mountOptions" $JSON)
-    READ_WRITE_MODE=$(parse_json "kubernetes.io/readwrite" $JSON)
-    USERNAME=$(parse_json "kubernetes.io/secret/username" $JSON | base64 -d)
-    PASSWORD=$(parse_json "kubernetes.io/secret/password" $JSON | base64 -d)
-    DOMAIN=$(parse_json "kubernetes.io/secret/domain" $JSON| base64 -d)
+    MOUNT_OPTIONS=$(parse_json "mountOptions" "$JSON")
+    READ_WRITE_MODE=$(parse_json "kubernetes.io/readwrite" "$JSON")
+    USERNAME=$(parse_json "kubernetes.io/secret/username" "$JSON" | base64 -d)
+    PASSWORD=$(parse_json "kubernetes.io/secret/password" "$JSON" | base64 -d)
+    DOMAIN=$(parse_json "kubernetes.io/secret/domain" "$JSON" | base64 -d)
 
     ALL_OPTIONS="${READ_WRITE_MODE}"
 
