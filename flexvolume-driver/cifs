@@ -4,7 +4,7 @@
 DEFAULT_CONTAINER_SECURITY_CONTEXT="context=system_u:object_r:svirt_sandbox_file_t:s0"
 
 init() {
-    echo '{"status": "Success", "capabilities": {"attach": false, "selinuxRelabel": false}}'
+    echo '{"status": "Success", "capabilities": {"attach": false, "selinuxRelabel": false, "fsGroup": false}}'
     exit 0
 }
 
